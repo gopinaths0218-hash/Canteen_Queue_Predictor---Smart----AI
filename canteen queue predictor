@@ -1,0 +1,66 @@
+#include <stdio.h>
+
+#define MAX 10
+#define FORECAST 5
+
+/* Canteen Queue Predictor
+   Uses a moving average of past arrivals to forecast queue length
+   and waiting time for the next few minutes. */
+
+float average(int data[], int n) {
+    int sum = 0;
+    for (int i = 0; i < n; i++) sum += data[i];
+    return (float)sum / n;
+}
+
+const char *status(float wait) {
+    if (wait <= 3)  return "Low   - go now!";
+    if (wait <= 8)  return "Medium - moderate wait";
+    return "High  - try later";
+}
+
+int main(void) {
+    int n, counters, arrivals[MAX];
+    float queue, serviceTime;
+
+    printf("=== Canteen Queue Predictor ===\n");
+    printf("Past readings to enter (1-%d): ", MAX);
+    if (scanf("%d", &n) != 1 || n < 1 || n > MAX) {
+        printf("Invalid number of readings.\n");
+        return 1;
+    }
+
+    printf("Enter students arriving per minute for last %d minutes:\n", n);
+    for (int i = 0; i < n; i++) scanf("%d", &arrivals[i]);
+
+    printf("Current queue length: ");
+    scanf("%f", &queue);
+    printf("Number of open counters: ");
+    scanf("%d", &counters);
+    printf("Avg service time per student (minutes): ");
+    scanf("%f", &serviceTime);
+
+    if (counters < 1 || serviceTime <= 0 || queue < 0) {
+        printf("Invalid input.\n");
+        return 1;
+    }
+
+    float arrivalRate = average(arrivals, n);        /* students/min in */
+    float serviceRate = counters / serviceTime;      /* students/min out */
+
+    printf("\nArrival rate: %.2f/min | Service rate: %.2f/min\n",
+           arrivalRate, serviceRate);
+    printf("\nMin  Queue  Wait(min)  Status\n");
+    printf("-------------------------------------------\n");
+
+    for (int t = 1; t <= FORECAST; t++) {
+        queue += arrivalRate - serviceRate;
+        if (queue < 0) queue = 0;
+        float wait = queue / serviceRate;
+        printf("%3d  %5.1f  %9.1f  %s\n", t, queue, wait, status(wait));
+    }
+
+    if (arrivalRate > serviceRate)
+        printf("\nWarning: queue is growing. Consider opening more counters.\n");
+    return 0;
+}
